@@ -1,0 +1,7 @@
+[package]
+name = "frontDesktop"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chip8_impl = { path = "../chip8_impl" }
