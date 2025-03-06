@@ -1,7 +1,8 @@
+const STACK_SIZE: usize = 16;
 
 
 pub struct Stack {
-    stack : [u16; 16],
+    stack : [u16; STACK_SIZE],
     stack_pointer : usize,
 }
 
