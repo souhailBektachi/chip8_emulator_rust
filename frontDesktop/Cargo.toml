@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 chip8_impl = { path = "../chip8_impl" }
+sdl2 = { version = "0.37.0", features = ["ttf"] }
