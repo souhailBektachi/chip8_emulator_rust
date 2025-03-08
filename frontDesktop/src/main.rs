@@ -1,21 +1,18 @@
 use chip8_impl::*;
 use std::env;
-use sdl2::event::{self, Event};
+use sdl2::event::{ Event};
 use std::fs::File;
 use std::io::Read;
 use sdl2::pixels::Color;
 use sdl2::render::Canvas;   
 use sdl2::video::Window;
 use sdl2::rect::Rect;
-use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
+use sdl2::audio::{AudioCallback, AudioSpecDesired};
 const SCALE: u32 = 15;
 const WINDOW_WIDTH: u32 = (DISPLAY_WIDTH as u32) * SCALE;
 const WINDOW_HEIGHT: u32 = (DISPLAY_HEIGHT as u32) * SCALE;
-const TICKS_PER_FRAME: usize = 10;
 use sdl2::keyboard::Keycode;
 
-const TARGET_FPS: u32 = 60;
-const FRAME_TIME: u32 = 1000 / TARGET_FPS; // Time per frame in milliseconds
 
 const CPU_FREQ: f64 = 500.0; // Hz
 const TIMER_FREQ: f64 = 60.0; // Hz
@@ -169,7 +166,7 @@ fn main() {
             }
 
         }
-        if(chip8.draw_flag){
+        if chip8.draw_flag {
             chip8.draw_flag = false;
             draw_screen(&mut canvas, &chip8);
         }
