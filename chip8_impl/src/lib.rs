@@ -1,5 +1,4 @@
 mod helpers;
-use core::num;
 
 use helpers::stack::Stack;
 use rand::random;
@@ -38,6 +37,7 @@ pub struct Emulator {
     v_register: [u8; NUM_REGISTERS],
     i_register: u16,
     stack: Stack,
+    pub draw_flag: bool,
 
     keypad: [bool; NUM_KEYS],
     delay_timer: u8,
@@ -58,6 +58,7 @@ impl Emulator {
             keypad: [false; NUM_KEYS],
             delay_timer: 0,
             sound_timer: 0,
+            draw_flag: false,
         };
         emu.memory[..FONT_SIZE].copy_from_slice(&FONTSET);
 
@@ -81,6 +82,14 @@ impl Emulator {
         let opcode = self.fetch_opcode();
         self.execute(opcode);
     }
+    pub fn tick_timer(&mut self){
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
+        }
+    }
 
     fn fetch_opcode(&mut self) -> u16 {
         let higher_byte = self.memory[self.pc as usize] as u16;
@@ -97,6 +106,12 @@ impl Emulator {
 
         match (d1, d2, d3, d4) {
             (0, 0, 0, 0) => return,
+            (0, 0, 0xE, 0) => {
+                self.screen = [false; DISPLAY_WIDTH * DISPLAY_HEIGHT];
+            }
+            (0, 0, 0xE, 0xE) => {
+                self.pc = self.stack.pop();
+            }
             (1, _, _, _) => {
                 let nnn = op & 0x0FFF;
                 self.pc = nnn;
@@ -154,7 +169,7 @@ impl Emulator {
             }
             (8, _, _, 3) => {
                 let x = d2 as usize;
-                let y = d2 as usize;
+                let y = d3 as usize;  
                 self.v_register[x] ^= self.v_register[y];
             }
             (8, _, _, 4) => {
@@ -182,7 +197,7 @@ impl Emulator {
             }
             (8, _, _, 7) => {
                 let x = d2 as usize;
-                let y = d2 as usize;
+                let y = d3 as usize;  // Fix: changed from d2 to d3
                 let (res, borrow) = self.v_register[y].overflowing_sub(self.v_register[x]);
 
                 self.v_register[x] = res;
@@ -245,6 +260,7 @@ impl Emulator {
                 } else {
                     self.v_register[0xF] = 0;
                 }
+                self.draw_flag = true;
             }
             (0xE, _, 9, 0xE) => {
                 let x = d2 as usize;
@@ -270,17 +286,17 @@ impl Emulator {
                 
             }
             (0xF,_,0,0xA) => {
-                let x = d2 as usize ;
+                let x = d2 as usize;
                 let mut pressed = false;
-                for i in 0..self.keypad.len(){
-                    if self.keypad[i]{
+                for i in 0..self.keypad.len() {
+                    if self.keypad[i] {
                         self.v_register[x] = i as u8;
-                        pressed = false;
+                        pressed = true; 
                         break;
                     }
                 }
-                if!pressed{
-                    self.pc -= 2;
+                if !pressed {
+                    self.pc -= 2;  
                 }
             }
             // FX15 Delay Timer = VX
@@ -298,7 +314,7 @@ impl Emulator {
 
             // FX1E I += VX
             (0xF,_,1,0xE) => {
-                let vx = self.v_register[d2 as usize];
+                let vx = self.v_register[d2 as usize] as u16;
                 self.i_register = self.i_register.wrapping_add(vx);
             }
             // FX29 Set I to address of font character in VX
@@ -345,5 +361,24 @@ impl Emulator {
             }
         }
        
+    }
+
+    pub fn get_display(&self) -> &[bool] {
+        &self.screen
+    }
+
+    pub fn set_key(&mut self, key: usize, pressed: bool) {
+        self.keypad[key] = pressed;
+    }
+    pub fn load(&mut self, data :&[u8]) {
+        let start = START_ADDRESS as usize;
+        let end = start + data.len();
+
+        self.memory[start..end].copy_from_slice(data);
+
+    }
+    
+    pub fn sound_timer(&self) -> u8 {
+        self.sound_timer
     }
 }
